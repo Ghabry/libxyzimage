@@ -84,7 +84,7 @@ static size_t xyzpriv_fwrite_func(void* userdata, void* buffer, size_t amount, x
 	return res;
 }
 
-XYZImage* xyzimage_alloc() {
+static XYZImage* xyzpriv_alloc() {
 	XYZImage* img = (XYZImage*)malloc(sizeof(struct XYZImage));
 
 	img->header[0] = 'X';
@@ -106,6 +106,45 @@ XYZImage* xyzimage_alloc() {
 	img->zlib_error = 0;
 
 	return img;
+}
+
+XYZImage* xyzimage_alloc(uint16_t width, uint16_t height, enum XYZImage_Format format, xyzimage_error_t* error) {
+	unsigned int multiplier = 0;
+
+	switch (format) {
+		case XYZIMAGE_FORMAT_DEFAULT:
+			multiplier = 1;
+			break;
+		case XYZIMAGE_FORMAT_RGBX:
+			multiplier = 4;
+			break;
+		default:
+			xyzpriv_set_error(error, XYZIMAGE_ERROR_FORMAT_NOT_SUPPORTED);
+			return NULL;
+	}
+
+	XYZImage* image = xyzpriv_alloc();
+
+	if (image == NULL) {
+		xyzpriv_set_error(error, XYZIMAGE_ERROR_OUT_OF_MEMORY);
+		return NULL;
+	}
+
+	image->width = width;
+	image->height = height;
+
+	image->data_len = width * height * multiplier;
+	void* data = malloc(image->data_len);
+
+	if (data == NULL) {
+		xyzpriv_set_error(error, XYZIMAGE_ERROR_OUT_OF_MEMORY);
+		image->data_len = 0;
+		return NULL;
+	}
+
+	image->data = data;
+
+	return image;
 }
 
 int xyzimage_free(XYZImage* image) {
@@ -144,50 +183,38 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 		return NULL;
 	}
 
-	XYZImage* image = xyzimage_alloc();
-
-	if (image == NULL) {
-		xyzpriv_set_error(error, XYZIMAGE_ERROR_OUT_OF_MEMORY);
-		return NULL;
-	}
-
 	// Check for XYZ1 header
 	char xyz_header[4];
 	size_t res = read_func(userdata, xyz_header, 4, error);
 
 	if (res != 4 || (error && *error != 0)) {
-		xyzimage_free(image);
 		return NULL;
 	}
 
 	if (memcmp(xyz_header, "XYZ1", 4) != 0) {
-		xyzimage_free(image);
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_READ_BAD_HEADER);
 		return NULL;
 	}
 
 	// Read width and height
-	res = read_func(userdata, &image->width, 2, error);
+	uint16_t width;
+	res = read_func(userdata, &width, 2, error);
 
 	if (res != 2 || (error && *error != 0)) {
-		xyzimage_free(image);
 		return NULL;
 	}
 
-	res = read_func(userdata, &image->height, 2, error);
+	uint16_t height;
+	res = read_func(userdata, &height, 2, error);
 
 	if (res != 2 || (error && *error != 0)) {
-		xyzimage_free(image);
 		return NULL;
 	}
 
-	// Allocate image buffer
-	image->data_len = image->height * image->width;
-	image->data = malloc(image->data_len);
+	// Allocate XYZImage structure
+	XYZImage* image = xyzimage_alloc(width, height, XYZIMAGE_FORMAT_DEFAULT, error);
 
-	if (image->data == NULL) {
-		xyzimage_free(image);
-		xyzpriv_set_error(error, XYZIMAGE_ERROR_OUT_OF_MEMORY);
+	if (!image || (error && *error != 0)) {
 		return NULL;
 	}
 
@@ -249,8 +276,7 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 		image->palette.entry[i].blue = decompressed_xyz[i * 3 + 2];
 	}
 
-	void* img_buffer = xyzimage_alloc_image(image, image->width, image->height, XYZIMAGE_FORMAT_DEFAULT, error);
-
+	void* img_buffer = xyzimage_get_image(image, NULL);
 	if (img_buffer == NULL || (error && *error != 0)) {
 		xyzimage_free(image);
 		free(compressed_xyz);
@@ -282,16 +308,29 @@ uint16_t xyzimage_get_height(XYZImage* image) {
 	return image->height;
 }
 
-
-XYZImage_Palette* xyzimage_get_palette(XYZImage* image) {
+XYZImage_Palette* xyzimage_get_palette(XYZImage* image, xyzimage_error_t* error) {
 	if (!xyzimage_is_valid(image)) {
+		xyzpriv_set_error(error, XYZIMAGE_ERROR_XYZIMAGE_INVALID);
+		return NULL;
+	}
+
+	if (image->format != XYZIMAGE_FORMAT_DEFAULT) {
+		xyzpriv_set_error(error, XYZIMAGE_ERROR_IMAGE_NOT_INDEXED);
 		return NULL;
 	}
 
 	return &image->palette;
 }
 
-void* xyzimage_get_image(XYZImage* image, size_t* len, enum XYZImage_Format* format) {
+enum XYZImage_Format xyzimage_get_format(XYZImage* image) {
+	if (!xyzimage_is_valid(image)) {
+		return XYZIMAGE_FORMAT_NONE;
+	}
+
+	return image->format;
+}
+
+void* xyzimage_get_image(XYZImage* image, size_t* len) {
 	if (!xyzimage_is_valid(image)) {
 		return NULL;
 	}
@@ -300,69 +339,7 @@ void* xyzimage_get_image(XYZImage* image, size_t* len, enum XYZImage_Format* for
 		*len = image->data_len;
 	}
 
-	if (format) {
-		*format = image->format;
-	}
-
 	return &image->data;
-}
-
-void xyzimage_set_width(XYZImage* image, uint16_t width, xyzimage_error_t* error) {
-	if (!xyzimage_is_valid(image)) {
-		return;
-	}
-
-	// TODO realloc
-
-	image->width = width;
-}
-
-void xyzimage_set_height(XYZImage* image, uint16_t height, xyzimage_error_t* error) {
-	if (!xyzimage_is_valid(image)) {
-		return;
-	}
-
-	// TODO realloc
-
-	image->height = height;
-}
-
-void* xyzimage_alloc_image(XYZImage* image, uint16_t width, uint16_t height, enum XYZImage_Format format, xyzimage_error_t* error) {
-	if (!xyzimage_is_valid(image)) {
-		xyzpriv_set_error(error, XYZIMAGE_ERROR_XYZIMAGE_INVALID);
-		return NULL;
-	}
-
-	unsigned int multiplier = 0;
-
-	switch (format) {
-		case XYZIMAGE_FORMAT_DEFAULT:
-			multiplier = 1;
-			break;
-		case XYZIMAGE_FORMAT_RGBX:
-			multiplier = 4;
-			break;
-		default:
-			xyzpriv_set_error(error, XYZIMAGE_ERROR_FORMAT_NOT_SUPPORTED);
-			return NULL;
-	}
-
-	if (image->data) {
-		free(image->data);
-	}
-
-	image->data_len = width * height * multiplier;
-	void* data = malloc(image->data_len);
-
-	if (data == NULL) {
-		xyzpriv_set_error(error, XYZIMAGE_ERROR_OUT_OF_MEMORY);
-		image->data_len = 0;
-		return NULL;
-	}
-
-	image->data = data;
-
-	return image->data;
 }
 
 void xyzimage_set_compress_func(XYZImage* image, xyzimage_compress_func_t compress_func) {

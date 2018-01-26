@@ -37,11 +37,10 @@ enum XYZImage_Error {
 	XYZIMAGE_ERROR_IO_READ_BEHIND_END_OF_FILE,
 	XYZIMAGE_ERROR_IO_WRITE,
 	XYZIMAGE_ERROR_IO_COMPRESS,
-	XYZIMAGE_ERROR_BUFFER_BAD,
-	XYZIMAGE_ERROR_BUFFER_TOO_SMALL,
 	XYZIMAGE_ERROR_XYZIMAGE_INVALID,
 	XYZIMAGE_ERROR_IMAGE_TOO_MANY_COLORS,
 	XYZIMAGE_ERROR_IMAGE_ALPHA_CHANNEL,
+	XYZIMAGE_ERROR_IMAGE_NOT_INDEXED,
 	XYZIMAGE_ERROR_POINTER_BAD,
 	XYZIMAGE_ERROR_OUT_OF_MEMORY,
 	XYZIMAGE_ERROR_ZLIB,
@@ -61,7 +60,7 @@ typedef size_t (*xyzimage_read_func_t)(void* userdata, void* buffer, size_t amou
 typedef size_t (*xyzimage_compress_func_t)(void* buffer_in, size_t size_in, void* buffer_out, size_t size_out, xyzimage_error_t* error);
 typedef size_t (*xyzimage_write_func_t)(void* userdata, void* buffer, size_t amount, xyzimage_error_t* error);
 
-XYZImage* xyzimage_alloc();
+XYZImage* xyzimage_alloc(uint16_t width, uint16_t height, enum XYZImage_Format format, xyzimage_error_t* error);
 int xyzimage_free(XYZImage* image);
 
 XYZImage* xyzimage_fopen(FILE* file, xyzimage_error_t* error);
@@ -70,12 +69,10 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 
 uint16_t xyzimage_get_width(XYZImage* image);
 uint16_t xyzimage_get_height(XYZImage* image);
-XYZImage_Palette* xyzimage_get_palette(XYZImage* image);
-void* xyzimage_get_image(XYZImage* image, size_t* len, enum XYZImage_Format* format);
+XYZImage_Palette* xyzimage_get_palette(XYZImage* image, xyzimage_error_t* error);
+enum XYZImage_Format xyzimage_get_format(XYZImage* image);
+void* xyzimage_get_image(XYZImage* image, size_t* len);
 
-void xyzimage_set_width(XYZImage* image, uint16_t width, xyzimage_error_t* error);
-void xyzimage_set_height(XYZImage* image, uint16_t height, xyzimage_error_t* error);
-void* xyzimage_alloc_image(XYZImage* image, uint16_t width, uint16_t height, enum XYZImage_Format format, xyzimage_error_t* error);
 void xyzimage_set_compress_func(XYZImage* image, xyzimage_compress_func_t compress_func);
 
 int xyzimage_fwrite(XYZImage* image, FILE* file, xyzimage_error_t* error);
