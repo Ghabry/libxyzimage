@@ -1,0 +1,44 @@
+# libs/intermediate
+/bin/
+Makefile
+*.a
+*.elf
+*.o
+*~
+*.orig
+
+# autotools
+/autom4te.cache/
+/libxyzimage-*/
+/.libs/
+.deps/
+Makefile.in
+aclocal.m4
+config.h
+config.h.in
+config.status
+configure
+libtool
+stamp-h1
+.dirstamp
+*.la
+*.lo
+
+# cmake
+/CMakeFiles/
+CMakeCache.txt
+CPackConfig.cmake
+CPackSourceConfig.cmake
+CTestTestfile.cmake
+cmake_install.cmake
+cmake-build-*/
+
+# distribution archives
+libxyzimage-*.tar.*
+
+# osx
+__MACOSX
+.DS_Store
+
+# IDE config
+.idea/
