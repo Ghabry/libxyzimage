@@ -13,6 +13,9 @@
 
 #include "xyzimage.h"
 
+// Increment when the data format of struct XYZImage changes
+#define XYZPRIV_CURRENT_STRUCT_VERSION 1
+
 struct XYZImage {
 	uint8_t header[4];
 	uint32_t version;
@@ -107,7 +110,7 @@ static XYZImage* xyzpriv_alloc() {
 	img->header[2] = 'Y';
 	img->header[3] = 'Z';
 
-	img->version = XYZIMAGE_CURRENT_VERSION;
+	img->version = XYZPRIV_CURRENT_STRUCT_VERSION;
 
 	img->format = XYZIMAGE_FORMAT_DEFAULT;
 

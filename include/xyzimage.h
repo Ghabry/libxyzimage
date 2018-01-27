@@ -19,8 +19,6 @@ extern "C" {
 
 typedef struct XYZImage XYZImage;
 
-#define XYZIMAGE_CURRENT_VERSION 1
-
 #define XYZIMAGE_PALETTE_ENTRIES 256
 #define XYZIMAGE_PALETTE_SIZE (XYZIMAGE_PALETTE_ENTRIES * 3)
 
