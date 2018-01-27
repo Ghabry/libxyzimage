@@ -1,0 +1,12 @@
+prefix=/home/gabriel/Programmierung/libxyzimage/install
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libxyzimage
+Description: Library to handle RPG Maker 2000 and 2003 XYZ image files
+Version: 1.0
+URL: https://easyrpg.org/
+Requires.private: @AX_PACKAGE_REQUIRES_PRIVATE@
+Libs: -L${libdir} -lxyzimage
+Cflags: -I${includedir}/libxyzimage

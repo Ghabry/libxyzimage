@@ -8,6 +8,7 @@ Makefile
 *.orig
 
 # autotools
+/autoconf/
 /autom4te.cache/
 /libxyzimage-*/
 /.libs/
@@ -17,12 +18,14 @@ aclocal.m4
 config.h
 config.h.in
 config.status
+config.log
 configure
 libtool
 stamp-h1
 .dirstamp
 *.la
 *.lo
+libxyzimage.pc.in
 
 # cmake
 /CMakeFiles/
