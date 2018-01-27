@@ -51,7 +51,7 @@ static size_t xyzpriv_fread_func(void* userdata, void* buffer, size_t amount, xy
 	return res;
 }
 
-static size_t xyzpriv_compress_func(void* buffer_in, size_t len_in, void* buffer_out, size_t len_out, xyzimage_error_t* error) {
+static size_t xyzpriv_compress_func(const void* buffer_in, size_t len_in, void* buffer_out, size_t len_out, xyzimage_error_t* error) {
 	// buffer_in, buffer_out, len_in and len_out verified by caller
 	uLong comp_size = compressBound(len_in);
 
@@ -188,7 +188,7 @@ XYZImage* xyzimage_fopen(FILE* file, xyzimage_error_t* error) {
 	return xyzimage_open(file, xyzpriv_fread_func, error);
 }
 
-XYZImage* xyzimage_memopen(void* buffer, size_t len, xyzimage_error_t* error) {
+XYZImage* xyzimage_memopen(const void* buffer, size_t len, xyzimage_error_t* error) {
 	xyzpriv_set_error(error, XYZIMAGE_ERROR_NOT_IMPLEMENTED);
 	return NULL; // TODO Not implemented
 }
@@ -319,7 +319,7 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 	return image;
 }
 
-uint16_t xyzimage_get_width(XYZImage* image) {
+uint16_t xyzimage_get_width(const XYZImage* image) {
 	if (!xyzimage_is_valid(image)) {
 		return 0;
 	}
@@ -327,7 +327,7 @@ uint16_t xyzimage_get_width(XYZImage* image) {
 	return image->width;
 }
 
-uint16_t xyzimage_get_height(XYZImage* image) {
+uint16_t xyzimage_get_height(const XYZImage* image) {
 	if (!xyzimage_is_valid(image)) {
 		return 0;
 	}
@@ -349,7 +349,7 @@ XYZImage_Palette* xyzimage_get_palette(XYZImage* image, xyzimage_error_t* error)
 	return &image->palette;
 }
 
-enum XYZImage_Format xyzimage_get_format(XYZImage* image) {
+enum XYZImage_Format xyzimage_get_format(const XYZImage* image) {
 	if (!xyzimage_is_valid(image)) {
 		return XYZIMAGE_FORMAT_NONE;
 	}
@@ -369,7 +369,7 @@ void* xyzimage_get_image(XYZImage* image, size_t* len) {
 	return image->data;
 }
 
-size_t xyzimage_get_filesize(XYZImage* image) {
+size_t xyzimage_get_filesize(const XYZImage* image) {
 	if (!xyzimage_is_valid(image)) {
 		return 0;
 	}
@@ -377,7 +377,7 @@ size_t xyzimage_get_filesize(XYZImage* image) {
 	return image->data_len + 8;
 }
 
-size_t xyzimage_get_compressed_filesize(XYZImage* image) {
+size_t xyzimage_get_compressed_filesize(const XYZImage* image) {
 	if (!xyzimage_is_valid(image)) {
 		return 0;
 	}
@@ -515,7 +515,7 @@ int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_
 	return 1;
 }
 
-int xyzimage_is_valid(XYZImage* image) {
+int xyzimage_is_valid(const XYZImage* image) {
 	if (!image) {
 		return 0;
 	}
@@ -544,7 +544,7 @@ const char* xyzimage_get_error_message(xyzimage_error_t error) {
 	}
 }
 
-int xyzimage_get_zlib_error(XYZImage* image) {
+int xyzimage_get_zlib_error(const XYZImage* image) {
 	if (!xyzimage_is_valid(image)) {
 		return 0;
 	}

@@ -63,23 +63,23 @@ enum XYZImage_Format {
 typedef enum XYZImage_Error xyzimage_error_t;
 
 typedef size_t (*xyzimage_read_func_t)(void* userdata, void* buffer, size_t amount, xyzimage_error_t* error);
-typedef size_t (*xyzimage_compress_func_t)(void* buffer_in, size_t size_in, void* buffer_out, size_t size_out, xyzimage_error_t* error);
+typedef size_t (*xyzimage_compress_func_t)(const void* buffer_in, size_t size_in, void* buffer_out, size_t size_out, xyzimage_error_t* error);
 typedef size_t (*xyzimage_write_func_t)(void* userdata, void* buffer, size_t amount, xyzimage_error_t* error);
 
 XYZImage* xyzimage_alloc(uint16_t width, uint16_t height, enum XYZImage_Format format, xyzimage_error_t* error);
 int xyzimage_free(XYZImage* image);
 
 XYZImage* xyzimage_fopen(FILE* file, xyzimage_error_t* error);
-XYZImage* xyzimage_memopen(void* buffer, size_t len, xyzimage_error_t* error);
+XYZImage* xyzimage_memopen(const void* buffer, size_t len, xyzimage_error_t* error);
 XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage_error_t* error);
 
-uint16_t xyzimage_get_width(XYZImage* image);
-uint16_t xyzimage_get_height(XYZImage* image);
+uint16_t xyzimage_get_width(const XYZImage* image);
+uint16_t xyzimage_get_height(const XYZImage* image);
 XYZImage_Palette* xyzimage_get_palette(XYZImage* image, xyzimage_error_t* error);
-enum XYZImage_Format xyzimage_get_format(XYZImage* image);
+enum XYZImage_Format xyzimage_get_format(const XYZImage* image);
 void* xyzimage_get_image(XYZImage* image, size_t* len);
-size_t xyzimage_get_filesize(XYZImage* image);
-size_t xyzimage_get_compressed_filesize(XYZImage* image);
+size_t xyzimage_get_filesize(const XYZImage* image);
+size_t xyzimage_get_compressed_filesize(const XYZImage* image);
 
 void xyzimage_set_compress_func(XYZImage* image, xyzimage_compress_func_t compress_func);
 
@@ -87,10 +87,10 @@ int xyzimage_fwrite(XYZImage* image, FILE* file, xyzimage_error_t* error);
 int xyzimage_memwrite(XYZImage* image, void* buffer, size_t len, xyzimage_error_t* error);
 int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_func, xyzimage_error_t* error);
 
-int xyzimage_is_valid(XYZImage* image);
+int xyzimage_is_valid(const XYZImage* image);
 
 const char* xyzimage_get_error_message(xyzimage_error_t error);
-int xyzimage_get_zlib_error(XYZImage* image);
+int xyzimage_get_zlib_error(const XYZImage* image);
 
 #ifdef __cplusplus
 }
