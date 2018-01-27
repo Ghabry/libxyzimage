@@ -21,6 +21,7 @@ struct XYZImage {
 	enum XYZImage_Format format;
 	XYZImage_Palette palette;
 	size_t data_len;
+	size_t data_len_compressed;
 	void* data;
 	xyzimage_compress_func_t compress_func;
 	int zlib_error;
@@ -114,6 +115,7 @@ static XYZImage* xyzpriv_alloc() {
 
 	img->data = NULL;
 	img->data_len = 0;
+	img->data_len_compressed = 0;
 
 	img->compress_func = xyzpriv_compress_func;
 
@@ -256,6 +258,7 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 	// Special error handling for EOF check
 	xyzimage_error_t e = XYZIMAGE_ERROR_OK;
 	res = read_func(userdata, compressed_xyz, xyz_size, &e);
+
 	if (e != XYZIMAGE_ERROR_IO_READ_END_OF_FILE) {
 		xyzimage_free(image);
 		free(compressed_xyz);
@@ -270,6 +273,8 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 		xyzpriv_set_error(error, e);
 		return NULL;
 	}
+
+	image->data_len_compressed = res;
 
 	// Decompress the XYZ image
 	uLongf xyz_size_out = (int)xyz_size;
@@ -364,6 +369,22 @@ void* xyzimage_get_image(XYZImage* image, size_t* len) {
 	return image->data;
 }
 
+size_t xyzimage_get_filesize(XYZImage* image) {
+	if (!xyzimage_is_valid(image)) {
+		return 0;
+	}
+
+	return image->data_len + 8;
+}
+
+size_t xyzimage_get_compressed_filesize(XYZImage* image) {
+	if (!xyzimage_is_valid(image)) {
+		return 0;
+	}
+
+	return image->data_len_compressed + 8;
+}
+
 void xyzimage_set_compress_func(XYZImage* image, xyzimage_compress_func_t compress_func) {
 	if (!xyzimage_is_valid(image)) {
 		return;
@@ -453,6 +474,9 @@ int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_
 		free(compressed_xyz);
 		return 0;
 	}
+
+	// Update compressed size information (for statistical purposes)
+	image->data_len_compressed = compressed_size;
 
 	// Write the header
 	char xyz_header[4] = {'X', 'Y', 'Z', '1'};

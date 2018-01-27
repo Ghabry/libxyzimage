@@ -78,6 +78,8 @@ uint16_t xyzimage_get_height(XYZImage* image);
 XYZImage_Palette* xyzimage_get_palette(XYZImage* image, xyzimage_error_t* error);
 enum XYZImage_Format xyzimage_get_format(XYZImage* image);
 void* xyzimage_get_image(XYZImage* image, size_t* len);
+size_t xyzimage_get_filesize(XYZImage* image);
+size_t xyzimage_get_compressed_filesize(XYZImage* image);
 
 void xyzimage_set_compress_func(XYZImage* image, xyzimage_compress_func_t compress_func);
 
