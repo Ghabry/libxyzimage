@@ -133,9 +133,6 @@ XYZImage* xyzimage_alloc(uint16_t width, uint16_t height, enum XYZImage_Format f
 		case XYZIMAGE_FORMAT_DEFAULT:
 			multiplier = 1;
 			break;
-		case XYZIMAGE_FORMAT_RGBX:
-			multiplier = 4;
-			break;
 		default:
 			xyzpriv_set_error(error, XYZIMAGE_ERROR_FORMAT_NOT_SUPPORTED);
 			return NULL;
@@ -188,11 +185,6 @@ XYZImage* xyzimage_fopen(FILE* file, xyzimage_error_t* error) {
 	}
 
 	return xyzimage_open(file, xyzpriv_fread_func, error);
-}
-
-XYZImage* xyzimage_memopen(const void* buffer, size_t len, xyzimage_error_t* error) {
-	xyzpriv_set_error(error, XYZIMAGE_ERROR_NOT_IMPLEMENTED);
-	return NULL; // TODO Not implemented
 }
 
 XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage_error_t* error) {
@@ -413,13 +405,6 @@ int xyzimage_fwrite(XYZImage* image, FILE* file, xyzimage_error_t* error) {
 	return xyzimage_write(image, file, xyzpriv_fwrite_func, error);
 }
 
-int xyzimage_memwrite(XYZImage* image, void* buffer, size_t len, xyzimage_error_t* error) {
-	// TODO Not implemented
-	xyzpriv_set_error(error, XYZIMAGE_ERROR_NOT_IMPLEMENTED);
-
-	return 0;
-}
-
 int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_func, xyzimage_error_t* error) {
 	if (!xyzimage_is_valid(image)) {
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_XYZIMAGE_INVALID);
@@ -434,7 +419,6 @@ int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_
 	switch (image->format) {
 		case XYZIMAGE_FORMAT_DEFAULT:
 			break;
-		case XYZIMAGE_FORMAT_RGBX:
 		default:
 			xyzpriv_set_error(error, XYZIMAGE_ERROR_FORMAT_NOT_SUPPORTED);
 			return 0;

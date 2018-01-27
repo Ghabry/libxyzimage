@@ -87,15 +87,13 @@ enum XYZImage_Error {
  * The color format of the image buffer.
  * During writing all formats are internally converted to the default format because
  * that is the only format supported by XYZ.
- * Other formats are just provided for convenience.
+ * Currently no other formats are supported.
  */
 enum XYZImage_Format {
 	/** No format specified */
 	XYZIMAGE_FORMAT_NONE = 0,
 	/** Default XYZ format: 1 byte per pixel referencing 256 colors in the palette */
-	XYZIMAGE_FORMAT_DEFAULT,
-	/** 4 bytes per color in the order red, green, blue, alpha. */
-	XYZIMAGE_FORMAT_RGBX
+	XYZIMAGE_FORMAT_DEFAULT
 };
 
 typedef enum XYZImage_Error xyzimage_error_t;
@@ -165,17 +163,6 @@ int xyzimage_free(XYZImage* image);
  * @return An instance of XYZImage when successful, on error NULL is returned and an error code set.
  */
 XYZImage* xyzimage_fopen(FILE* file, xyzimage_error_t* error);
-
-/**
- * Loads a XYZ image from memory.
- * The pixel format of images loaded through this function is XYZIMAGE_FORMAT_DEFAULT.
- *
- * @param buffer Memory to read from
- * @param len Size of the memory buffer
- * @param error When non-null receives the error code when an error occurred
- * @return An instance of XYZImage when successful, on error NULL is returned and an error code set.
- */
-XYZImage* xyzimage_memopen(const void* buffer, size_t len, xyzimage_error_t* error);
 
 /**
  * Loads a XYZ image using a custom read function.
@@ -269,17 +256,6 @@ void xyzimage_set_compress_func(XYZImage* image, xyzimage_compress_func_t compre
  * @return 1 on success, on error 0 is returned and an error code set.
  */
 int xyzimage_fwrite(XYZImage* image, FILE* file, xyzimage_error_t* error);
-
-/**
- * Writes a XYZ image to memory.
- *
- * @param image Instance of XYZImage
- * @param buffer Memory to write to
- * @param len Size of the memory buffer
- * @param error When non-null receives the error code when an error occurred
- * @return 1 on success, on error 0 is returned and an error code set.
- */
-int xyzimage_memwrite(XYZImage* image, void* buffer, size_t len, xyzimage_error_t* error);
 
 /**
  * Writes a XYZ image using a custom write function.
