@@ -41,7 +41,7 @@ static size_t xyzpriv_fread_func(void* userdata, void* buffer, size_t amount, xy
 	size_t res = fread(buffer, 1, amount, (FILE*)userdata);
 	if (res != amount) {
 		if (feof((FILE*)userdata)) {
-			xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_READ_BEHIND_END_OF_FILE);
+			xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_READ_END_OF_FILE);
 		} else {
 			xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_READ_GENERIC);
 		}
@@ -219,7 +219,7 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 	}
 
 	// Allocate intermediate buffers
-	size_t xyz_size = (size_t)(XYZIMAGE_PALETTE_SIZE * image->width * image->height);
+	size_t xyz_size = (size_t)(XYZIMAGE_PALETTE_SIZE + image->width * image->height);
 
 	Bytef* compressed_xyz = malloc(xyz_size);
 
@@ -239,12 +239,21 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 	}
 
 	// Read the XYZ image
-	res = read_func(userdata, compressed_xyz, xyz_size, error);
-
-	if (res != xyz_size || (error && *error != 0)) {
+	// Special error handling for EOF check
+	xyzimage_error_t e = XYZIMAGE_ERROR_OK;
+	res = read_func(userdata, compressed_xyz, xyz_size, &e);
+	if (e != XYZIMAGE_ERROR_IO_READ_END_OF_FILE) {
 		xyzimage_free(image);
 		free(compressed_xyz);
 		free(decompressed_xyz);
+
+		if (res == xyz_size) {
+			// Not EOF and compressed image is larger than uncompressed
+			xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_READ_BAD_IMAGE);
+			return NULL;
+		}
+
+		xyzpriv_set_error(error, e);
 		return NULL;
 	}
 
@@ -253,9 +262,10 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 	image->zlib_error = uncompress(
 			decompressed_xyz, &xyz_size_out, compressed_xyz, (uLong)xyz_size);
 
+	free(compressed_xyz);
+
 	if (image->zlib_error != Z_OK) {
 		xyzimage_free(image);
-		free(compressed_xyz);
 		free(decompressed_xyz);
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_ZLIB);
 		return NULL;
@@ -263,30 +273,28 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 
 	if (xyz_size_out != xyz_size) {
 		xyzimage_free(image);
-		free(compressed_xyz);
 		free(decompressed_xyz);
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_READ_BAD_IMAGE);
 		return NULL;
 	}
 
 	// Fill the data structures
-	for (int i = 0; i < XYZIMAGE_PALETTE_SIZE; ++i) {
+	for (int i = 0; i < XYZIMAGE_PALETTE_ENTRIES; ++i) {
 		image->palette.entry[i].red = decompressed_xyz[i * 3];
 		image->palette.entry[i].green = decompressed_xyz[i * 3 + 1];
 		image->palette.entry[i].blue = decompressed_xyz[i * 3 + 2];
 	}
 
-	void* img_buffer = xyzimage_get_image(image, NULL);
+	size_t img_buffer_len;
+	void* img_buffer = xyzimage_get_image(image, &img_buffer_len);
 	if (img_buffer == NULL || (error && *error != 0)) {
 		xyzimage_free(image);
-		free(compressed_xyz);
 		free(decompressed_xyz);
 		return NULL;
 	}
 
-	memcpy(img_buffer, decompressed_xyz + XYZIMAGE_PALETTE_SIZE, xyz_size);
+	memcpy(img_buffer, decompressed_xyz + XYZIMAGE_PALETTE_SIZE, img_buffer_len);
 
-	free(compressed_xyz);
 	free(decompressed_xyz);
 
 	return image;
@@ -339,7 +347,7 @@ void* xyzimage_get_image(XYZImage* image, size_t* len) {
 		*len = image->data_len;
 	}
 
-	return &image->data;
+	return image->data;
 }
 
 void xyzimage_set_compress_func(XYZImage* image, xyzimage_compress_func_t compress_func) {
@@ -396,7 +404,7 @@ int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_
 	}
 
 	// Allocate intermediate buffer
-	size_t xyz_size = (size_t)(XYZIMAGE_PALETTE_SIZE * image->width * image->height);
+	size_t xyz_size = (size_t)(XYZIMAGE_PALETTE_SIZE + image->width * image->height);
 
 	Bytef* decompressed_xyz = malloc(xyz_size);
 
@@ -406,13 +414,13 @@ int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_
 	}
 
 	// Fill the buffer
-	for (int i = 0; i < XYZIMAGE_PALETTE_SIZE; ++i) {
+	for (int i = 0; i < XYZIMAGE_PALETTE_ENTRIES; ++i) {
 		decompressed_xyz[i * 3] = image->palette.entry[i].red;
 		decompressed_xyz[i * 3 + 1] = image->palette.entry[i].green;
-		decompressed_xyz[i * 3 + 2] =image->palette.entry[i].blue;
+		decompressed_xyz[i * 3 + 2] = image->palette.entry[i].blue;
 	}
 
-	memcpy(decompressed_xyz, image->data + XYZIMAGE_PALETTE_SIZE, image->data_len);
+	memcpy(decompressed_xyz + XYZIMAGE_PALETTE_SIZE, image->data, image->data_len);
 
 	// Compress using the compression function
 	size_t required_size = xyzpriv_compress_func(NULL, xyz_size, NULL, 0, error);

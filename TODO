@@ -1,0 +1,11 @@
+mem io
+ - read
+ - write
+
+RGBX support for alloc
+ - reject images with alpha != 0 and != 255
+ - reject images with colors > 256
+
+documentation
+
+some test cases
