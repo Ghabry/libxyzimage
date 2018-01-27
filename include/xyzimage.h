@@ -13,6 +13,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct XYZImage XYZImage;
 
 #define XYZIMAGE_CURRENT_VERSION 1
@@ -85,5 +89,9 @@ int xyzimage_is_valid(XYZImage* image);
 
 const char* xyzimage_get_error_message(xyzimage_error_t error);
 int xyzimage_get_zlib_error(XYZImage* image);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // LIBXYZIMAGE_XYZIMAGE_H
