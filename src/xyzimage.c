@@ -445,7 +445,7 @@ int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_
 		return 0;
 	}
 
-	size_t compressed_size = xyzpriv_compress_func(decompressed_xyz, xyz_size, compressed_xyz, xyz_size, error);
+	size_t compressed_size = image->compress_func(decompressed_xyz, xyz_size, compressed_xyz, xyz_size, error);
 
 	free(decompressed_xyz);
 
