@@ -52,22 +52,35 @@ static size_t xyzpriv_fread_func(void* userdata, void* buffer, size_t amount, xy
 
 static size_t xyzpriv_compress_func(void* buffer_in, size_t len_in, void* buffer_out, size_t len_out, xyzimage_error_t* error) {
 	// buffer_in, buffer_out, len_in and len_out verified by caller
+	uLong comp_size = compressBound(len_in);
 
-	if (len_out == 0) {
-		uLong comp_size = compressBound(len_in);
+	void* buffer_out_tmp = malloc(comp_size);
 
-		return (size_t)comp_size;
+	if (buffer_out_tmp == NULL) {
+		xyzpriv_set_error(error, XYZIMAGE_ERROR_OUT_OF_MEMORY);
+		return 0;
 	}
 
 	int error_code = compress2(
-			buffer_out, &len_out, buffer_in, len_in, Z_BEST_COMPRESSION);
+			buffer_out_tmp, &comp_size, buffer_in, len_in, Z_BEST_COMPRESSION);
 
 	if (error_code != Z_OK) {
+		free(buffer_out_tmp);
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_COMPRESS);
 		return 0;
 	}
 
-	return len_out;
+	if (comp_size > len_out) {
+		free(buffer_out_tmp);
+		xyzpriv_set_error(error, XYZIMAGE_ERROR_BUFFER_TOO_SMALL);
+		return 0;
+	}
+
+	memcpy(buffer_out, buffer_out_tmp, comp_size);
+
+	free(buffer_out_tmp);
+
+	return comp_size;
 }
 
 static size_t xyzpriv_fwrite_func(void* userdata, void* buffer, size_t amount, xyzimage_error_t* error) {
@@ -424,9 +437,7 @@ int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_
 	memcpy(decompressed_xyz + XYZIMAGE_PALETTE_SIZE, image->data, image->data_len);
 
 	// Compress using the compression function
-	size_t required_size = xyzpriv_compress_func(NULL, xyz_size, NULL, 0, error);
-
-	void* compressed_xyz = malloc(required_size);
+	void* compressed_xyz = malloc(xyz_size);
 
 	if (compressed_xyz == NULL) {
 		free(decompressed_xyz);
@@ -434,7 +445,7 @@ int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_
 		return 0;
 	}
 
-	size_t compressed_size = xyzpriv_compress_func(decompressed_xyz, xyz_size, compressed_xyz, required_size, error);
+	size_t compressed_size = xyzpriv_compress_func(decompressed_xyz, xyz_size, compressed_xyz, xyz_size, error);
 
 	free(decompressed_xyz);
 
