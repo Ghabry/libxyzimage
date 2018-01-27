@@ -16,6 +16,8 @@
 // Increment when the data format of struct XYZImage changes
 #define XYZPRIV_CURRENT_STRUCT_VERSION 1
 
+#define XYZPRIV_HEADER_SIZE 8u
+
 struct XYZImage {
 	uint8_t header[4];
 	uint32_t version;
@@ -27,7 +29,6 @@ struct XYZImage {
 	size_t data_len_compressed;
 	void* data;
 	xyzimage_compress_func_t compress_func;
-	int zlib_error;
 };
 
 static void xyzpriv_set_error(xyzimage_error_t* error, xyzimage_error_t which) {
@@ -76,7 +77,7 @@ static size_t xyzpriv_compress_func(const void* buffer_in, size_t len_in, void* 
 
 	if (comp_size > len_out) {
 		free(buffer_out_tmp);
-		xyzpriv_set_error(error, XYZIMAGE_ERROR_BUFFER_TOO_SMALL);
+		xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_COMPRESS);
 		return 0;
 	}
 
@@ -87,7 +88,7 @@ static size_t xyzpriv_compress_func(const void* buffer_in, size_t len_in, void* 
 	return comp_size;
 }
 
-static size_t xyzpriv_fwrite_func(void* userdata, void* buffer, size_t amount, xyzimage_error_t* error) {
+static size_t xyzpriv_fwrite_func(void* userdata, const void* buffer, size_t amount, xyzimage_error_t* error) {
 	if (userdata == NULL) {
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_POINTER_BAD);
 		return 0;
@@ -122,8 +123,6 @@ static XYZImage* xyzpriv_alloc() {
 
 	img->compress_func = xyzpriv_compress_func;
 
-	img->zlib_error = 0;
-
 	return img;
 }
 
@@ -153,7 +152,7 @@ XYZImage* xyzimage_alloc(uint16_t width, uint16_t height, enum XYZImage_Format f
 	image->height = height;
 
 	image->data_len = width * height * multiplier;
-	void* data = malloc(image->data_len);
+	void* data = calloc(1, image->data_len);
 
 	if (data == NULL) {
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_OUT_OF_MEMORY);
@@ -281,12 +280,12 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 
 	// Decompress the XYZ image
 	uLongf xyz_size_out = (int)xyz_size;
-	image->zlib_error = uncompress(
+	int zlib_error = uncompress(
 			decompressed_xyz, &xyz_size_out, compressed_xyz, (uLong)xyz_size);
 
 	free(compressed_xyz);
 
-	if (image->zlib_error != Z_OK) {
+	if (zlib_error != Z_OK) {
 		xyzimage_free(image);
 		free(decompressed_xyz);
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_ZLIB);
@@ -308,7 +307,7 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 	}
 
 	size_t img_buffer_len;
-	void* img_buffer = xyzimage_get_image(image, &img_buffer_len);
+	void* img_buffer = xyzimage_get_buffer(image, &img_buffer_len);
 	if (img_buffer == NULL || (error && *error != 0)) {
 		xyzimage_free(image);
 		free(decompressed_xyz);
@@ -360,7 +359,7 @@ enum XYZImage_Format xyzimage_get_format(const XYZImage* image) {
 	return image->format;
 }
 
-void* xyzimage_get_image(XYZImage* image, size_t* len) {
+void* xyzimage_get_buffer(XYZImage* image, size_t* len) {
 	if (!xyzimage_is_valid(image)) {
 		return NULL;
 	}
@@ -377,7 +376,7 @@ size_t xyzimage_get_filesize(const XYZImage* image) {
 		return 0;
 	}
 
-	return image->data_len + 8;
+	return image->width * image->height + XYZPRIV_HEADER_SIZE + XYZIMAGE_PALETTE_SIZE;
 }
 
 size_t xyzimage_get_compressed_filesize(const XYZImage* image) {
@@ -385,7 +384,7 @@ size_t xyzimage_get_compressed_filesize(const XYZImage* image) {
 		return 0;
 	}
 
-	return image->data_len_compressed + 8;
+	return image->data_len_compressed + XYZPRIV_HEADER_SIZE;
 }
 
 void xyzimage_set_compress_func(XYZImage* image, xyzimage_compress_func_t compress_func) {
@@ -537,20 +536,40 @@ int xyzimage_is_valid(const XYZImage* image) {
 const char* xyzimage_get_error_message(xyzimage_error_t error) {
 	switch (error) {
 		case XYZIMAGE_ERROR_OK:
-			return "Success";
+			return "Success.";
 		case XYZIMAGE_ERROR_IO_READ_GENERIC:
-			return "Reading the X";
+			return "A read error occurred.";
+		case XYZIMAGE_ERROR_IO_READ_BAD_HEADER:
+			return "The image file does not have a XYZ1 magic.";
+		case XYZIMAGE_ERROR_IO_READ_BAD_IMAGE:
+			return "After decompression the image has a size != 256 * 3 + width * height.";
+		case XYZIMAGE_ERROR_IO_READ_END_OF_FILE:
+			return "Internal error code to signal that the whole XYZ image was read.";
 		case XYZIMAGE_ERROR_IO_WRITE:
-			return "A write operation failed";
+			return "Saving the picture failed due to a write error.";
+		case XYZIMAGE_ERROR_IO_COMPRESS:
+			return "The compression step during saving failed.";
+		case XYZIMAGE_ERROR_XYZIMAGE_INVALID:
+			return "The passed XYZImage struct is invalid.";
+		case XYZIMAGE_ERROR_BUFFER_TOO_SMALL:
+			return "The passed buffer is not large enough.";
+		case XYZIMAGE_ERROR_IMAGE_TOO_MANY_COLORS:
+			return "The image is not indexed and has more than 256 colors.";
+		case XYZIMAGE_ERROR_IMAGE_ALPHA_CHANNEL:
+			return "The image has alpha channel values different from 0 or 255.";
+		case XYZIMAGE_ERROR_IMAGE_NOT_INDEXED:
+			return "The palette can only be accessed for color formats that are indexed.";
+		case XYZIMAGE_ERROR_POINTER_BAD:
+			return "At least one mandatory passed pointer is a NULL pointer.";
+		case XYZIMAGE_ERROR_OUT_OF_MEMORY:
+			return "A memory allocation failed.";
+		case XYZIMAGE_ERROR_ZLIB:
+			return "zlib was unable to decompress the image.";
+		case XYZIMAGE_ERROR_NOT_IMPLEMENTED:
+			return "The used API call is not supported by this library version.";
+		case XYZIMAGE_ERROR_FORMAT_NOT_SUPPORTED:
+			return "The requested XYZImage_Format is not supported by this library version.";
 		default:
-			return "Unknown error";
+			return "Unknown error.";
 	}
-}
-
-int xyzimage_get_zlib_error(const XYZImage* image) {
-	if (!xyzimage_is_valid(image)) {
-		return 0;
-	}
-
-	return image->zlib_error;
 }

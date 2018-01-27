@@ -309,14 +309,6 @@ int xyzimage_is_valid(const XYZImage* image);
  */
 const char* xyzimage_get_error_message(xyzimage_error_t error);
 
-/**
- * When the last error was XYZIMAGE_ERROR_ZLIB returns the zlib error code.
- *
- * @param image Instance of XYZImage
- * @return zlib error code
- */
-int xyzimage_get_zlib_error(const XYZImage* image);
-
 #ifdef __cplusplus
 }
 #endif
