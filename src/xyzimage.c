@@ -87,10 +87,11 @@ static size_t xyzpriv_fwrite_func(void* userdata, void* buffer, size_t amount, x
 static XYZImage* xyzpriv_alloc() {
 	XYZImage* img = (XYZImage*)malloc(sizeof(struct XYZImage));
 
-	img->header[0] = 'X';
-	img->header[1] = 'Y';
-	img->header[2] = 'Z';
-	img->header[3] = 'I';
+	// Magic bytes of the struct, not of the XYZ image
+	img->header[0] = 'L';
+	img->header[1] = 'X';
+	img->header[2] = 'Y';
+	img->header[3] = 'Z';
 
 	img->version = XYZIMAGE_CURRENT_VERSION;
 
@@ -484,7 +485,7 @@ int xyzimage_is_valid(XYZImage* image) {
 		return 0;
 	}
 
-	if (memcmp(image->header, "XYZI", 4) != 0) {
+	if (memcmp(image->header, "LXYZ", 4) != 0) {
 		return 0;
 	}
 
