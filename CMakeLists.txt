@@ -11,8 +11,7 @@ add_library(xyzimage
 
 target_include_directories(xyzimage PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
-    PRIVATE src)
+    $<INSTALL_INTERFACE:include>)
 
 target_link_libraries(xyzimage ZLIB::ZLIB)
 
@@ -23,4 +22,11 @@ install(TARGETS xyzimage
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(DIRECTORY include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/xyzimage)
+
+set(ConfigPackageLocation lib/cmake/xyzimage)
+
+install(FILES pkg-config/xyzimage-config.cmake
+        DESTINATION ${ConfigPackageLocation}
+)

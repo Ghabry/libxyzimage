@@ -1,6 +1,10 @@
 EXTRA_DIST = AUTHORS.md README.md TODO
+
 pkgconfigdir = ${libdir}/pkgconfig
-pkgconfig_DATA = extra/libxyzimage.pc
+pkgconfig_DATA = pkg-config/libxyzimage.pc
+
+cmakeconfigdir = $(libdir)/cmake/xyzimage
+cmakeconfig_DATA = pkg-config/xyzimage-config.cmake
 
 lib_LTLIBRARIES = libxyzimage.la
 libxyzimage_la_CFLAGS = \
