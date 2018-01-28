@@ -37,6 +37,22 @@ static void xyzpriv_set_error(xyzimage_error_t* error, xyzimage_error_t which) {
 	}
 }
 
+static void xyzpriv_swap_when_big(uint16_t* us) {
+	union {
+		uint32_t i;
+		char c[4];
+	} d = {0x01020304};
+
+	int is_big = d.c[0] == 1;
+
+	if (!is_big) {
+		return;
+	}
+
+	*us = (*us >> 8) |
+		  (*us << 8);
+}
+
 static size_t xyzpriv_fread_func(void* userdata, void* buffer, size_t amount, xyzimage_error_t* error) {
 	if (userdata == NULL) {
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_POINTER_BAD);
@@ -213,12 +229,16 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 		return NULL;
 	}
 
+	xyzpriv_swap_when_big(&width);
+
 	uint16_t height;
 	res = read_func(userdata, &height, 2, error);
 
 	if (res != 2 || (error && *error != 0)) {
 		return NULL;
 	}
+
+	xyzpriv_swap_when_big(&height);
 
 	// Allocate XYZImage structure
 	XYZImage* image = xyzimage_alloc(width, height, XYZIMAGE_FORMAT_DEFAULT, error);
@@ -483,7 +503,7 @@ int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_
 			free(compressed_xyz);
 			free(decompressed_xyz);
 			xyzpriv_set_error(error, XYZIMAGE_ERROR_OUT_OF_MEMORY);
-			return NULL;
+			return 0;
 		}
 
 		compressed_xyz = compressed_xyz_new;
@@ -514,14 +534,20 @@ int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_
 	}
 
 	// Write width and height
-	res = write_func(userdata, &image->width, 2, error);
+	uint16_t width = image->width;
+	xyzpriv_swap_when_big(&width);
+
+	res = write_func(userdata, &width, 2, error);
 
 	if (res != 2 || (error && *error != 0)) {
 		free(compressed_xyz);
 		return 0;
 	}
 
-	res = write_func(userdata, &image->height, 2, error);
+	uint16_t height = image->height;
+	xyzpriv_swap_when_big(&height);
+
+	res = write_func(userdata, &height, 2, error);
 
 	if (res != 2 || (error && *error != 0)) {
 		free(compressed_xyz);
