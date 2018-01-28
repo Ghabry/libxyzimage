@@ -292,7 +292,8 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 	}
 
 	// Fill the data structures
-	for (int i = 0; i < XYZIMAGE_PALETTE_ENTRIES; ++i) {
+	int i;
+	for (i = 0; i < XYZIMAGE_PALETTE_ENTRIES; ++i) {
 		image->palette.entry[i].red = decompressed_xyz[i * 3];
 		image->palette.entry[i].green = decompressed_xyz[i * 3 + 1];
 		image->palette.entry[i].blue = decompressed_xyz[i * 3 + 2];
@@ -435,7 +436,8 @@ int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_
 	}
 
 	// Fill the buffer
-	for (int i = 0; i < XYZIMAGE_PALETTE_ENTRIES; ++i) {
+	int i;
+	for (i = 0; i < XYZIMAGE_PALETTE_ENTRIES; ++i) {
 		decompressed_xyz[i * 3] = image->palette.entry[i].red;
 		decompressed_xyz[i * 3 + 1] = image->palette.entry[i].green;
 		decompressed_xyz[i * 3 + 2] = image->palette.entry[i].blue;
