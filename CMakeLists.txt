@@ -22,7 +22,6 @@ set(prefix "${CMAKE_INSTALL_PREFIX}")
 set(exec_prefix "\${prefix}")
 set(libdir "\${exec_prefix}/${CMAKE_INSTALL_LIBDIR}")
 set(includedir "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}")
-string(REPLACE ";" " " AX_PACKAGE_REQUIRES_PRIVATE "zlib")
 configure_file(pkg-config/${PROJECT_NAME}.pc.in pkg-config/${PROJECT_NAME}.pc @ONLY)
 
 # install

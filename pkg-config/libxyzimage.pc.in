@@ -7,6 +7,6 @@ Name: @PACKAGE_TARNAME@
 Description: Library to handle RPG Maker 2000 and 2003 XYZ image files
 Version: @PACKAGE_VERSION@
 URL: https://easyrpg.org/
-Requires.private: @AX_PACKAGE_REQUIRES_PRIVATE@
+Requires.private: zlib
 Libs: -L${libdir} -lxyzimage
 Cflags: -I${includedir}/@PACKAGE_TARNAME@

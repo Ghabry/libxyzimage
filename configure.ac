@@ -12,7 +12,7 @@ AC_LANG([C])
 AM_PROG_AR
 LT_INIT([win32-dll])
 
-AX_PKG_CHECK_MODULES([ZLIB],[],[zlib])
+PKG_CHECK_MODULES([ZLIB],[zlib])
 
 AC_CONFIG_FILES([Makefile
 	pkg-config/libxyzimage.pc])

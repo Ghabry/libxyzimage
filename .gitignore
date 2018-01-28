@@ -9,7 +9,6 @@ Makefile
 
 # autotools
 /autoconf/
-!/autoconf/m4/ax_pkg_check_modules.m4
 /autom4te.cache/
 /libxyzimage-*/
 /.libs/
