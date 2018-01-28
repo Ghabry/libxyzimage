@@ -9,6 +9,7 @@ Makefile
 
 # autotools
 /autoconf/
+!/autoconf/m4/ax_pkg_check_modules.m4
 /autom4te.cache/
 /libxyzimage-*/
 /.libs/
@@ -25,7 +26,7 @@ stamp-h1
 .dirstamp
 *.la
 *.lo
-libxyzimage.pc.in
+libxyzimage.pc
 
 # cmake
 /CMakeFiles/

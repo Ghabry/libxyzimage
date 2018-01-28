@@ -4,6 +4,7 @@ AC_CONFIG_AUX_DIR([autoconf])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall])
 AM_SILENT_RULES([yes])
 
+AC_CONFIG_MACRO_DIR([autoconf/m4])
 AC_CONFIG_SRCDIR([src/xyzimage.c])
 AC_CONFIG_HEADERS([config.h])
 AC_LANG([C])
@@ -11,9 +12,9 @@ AC_LANG([C])
 AM_PROG_AR
 LT_INIT([win32-dll])
 
-PKG_CHECK_MODULES([ZLIB],[zlib])
+AX_PKG_CHECK_MODULES([ZLIB],[],[zlib])
 
 AC_CONFIG_FILES([Makefile
-	extra/libxyzimage.pc])
+	pkg-config/libxyzimage.pc])
 
 AC_OUTPUT
