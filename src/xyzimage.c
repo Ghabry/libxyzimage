@@ -59,6 +59,11 @@ static size_t xyzpriv_compress_func(const void* buffer_in, size_t len_in, void* 
 	// buffer_in, buffer_out, len_in and len_out verified by caller
 	uLong comp_size = compressBound(len_in);
 
+	if (comp_size > len_out) {
+		xyzpriv_set_error(error, XYZIMAGE_ERROR_BUFFER_TOO_SMALL);
+		return 0;
+	}
+
 	void* buffer_out_tmp = malloc(comp_size);
 
 	if (buffer_out_tmp == NULL) {
@@ -70,12 +75,6 @@ static size_t xyzpriv_compress_func(const void* buffer_in, size_t len_in, void* 
 			buffer_out_tmp, &comp_size, buffer_in, len_in, Z_BEST_COMPRESSION);
 
 	if (error_code != Z_OK) {
-		free(buffer_out_tmp);
-		xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_COMPRESS);
-		return 0;
-	}
-
-	if (comp_size > len_out) {
 		free(buffer_out_tmp);
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_COMPRESS);
 		return 0;
@@ -253,13 +252,30 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 	xyzimage_error_t e = XYZIMAGE_ERROR_OK;
 	res = read_func(userdata, compressed_xyz, xyz_size, &e);
 
+	if (e == XYZIMAGE_ERROR_OK) {
+		// Compression ratio is worse than 1, double the buffer size and try again
+		Bytef* compressed_xyz_new = realloc(compressed_xyz, xyz_size * 2);
+
+		if (compressed_xyz_new == NULL) {
+			xyzimage_free(image);
+			free(compressed_xyz);
+			free(decompressed_xyz);
+			xyzpriv_set_error(error, XYZIMAGE_ERROR_OUT_OF_MEMORY);
+			return NULL;
+		}
+
+		compressed_xyz = compressed_xyz_new;
+
+		res += read_func(userdata, compressed_xyz + xyz_size, xyz_size, &e);
+	}
+
 	if (e != XYZIMAGE_ERROR_IO_READ_END_OF_FILE) {
 		xyzimage_free(image);
 		free(compressed_xyz);
 		free(decompressed_xyz);
 
-		if (res == xyz_size) {
-			// Not EOF and compressed image is larger than uncompressed
+		if (e == XYZIMAGE_ERROR_OK) {
+			// Not EOF and compressed image is larger than twice the uncompressed
 			xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_READ_BAD_IMAGE);
 			return NULL;
 		}
@@ -273,7 +289,7 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 	// Decompress the XYZ image
 	uLongf xyz_size_out = (int)xyz_size;
 	int zlib_error = uncompress(
-			decompressed_xyz, &xyz_size_out, compressed_xyz, (uLong)xyz_size);
+			decompressed_xyz, &xyz_size_out, compressed_xyz, (uLong)res);
 
 	free(compressed_xyz);
 
@@ -454,7 +470,28 @@ int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_
 		return 0;
 	}
 
-	size_t compressed_size = image->compress_func(decompressed_xyz, xyz_size, compressed_xyz, xyz_size, error);
+	// Special error handling for buffer too small check (compressed > decompressed)
+	xyzimage_error_t e = XYZIMAGE_ERROR_OK;
+	size_t compressed_size = image->compress_func(decompressed_xyz, xyz_size, compressed_xyz, xyz_size, &e);
+
+	if (e == XYZIMAGE_ERROR_BUFFER_TOO_SMALL) {
+		// Compression ratio is worse than 1, double the buffer size and try again
+		Bytef* compressed_xyz_new = realloc(compressed_xyz, xyz_size * 2);
+
+		if (compressed_xyz_new == NULL) {
+			xyzimage_free(image);
+			free(compressed_xyz);
+			free(decompressed_xyz);
+			xyzpriv_set_error(error, XYZIMAGE_ERROR_OUT_OF_MEMORY);
+			return NULL;
+		}
+
+		compressed_xyz = compressed_xyz_new;
+
+		compressed_size = image->compress_func(decompressed_xyz, xyz_size, compressed_xyz, xyz_size * 2, error);
+	} else {
+		xyzpriv_set_error(error, e);
+	}
 
 	free(decompressed_xyz);
 
@@ -526,7 +563,7 @@ const char* xyzimage_get_error_message(xyzimage_error_t error) {
 		case XYZIMAGE_ERROR_IO_READ_GENERIC:
 			return "A read error occurred.";
 		case XYZIMAGE_ERROR_IO_READ_BAD_HEADER:
-			return "The image file does not have a XYZ1 magic.";
+			return "The file does not have a XYZ1 magic.";
 		case XYZIMAGE_ERROR_IO_READ_BAD_IMAGE:
 			return "After decompression the image has a size != 256 * 3 + width * height.";
 		case XYZIMAGE_ERROR_IO_READ_END_OF_FILE:

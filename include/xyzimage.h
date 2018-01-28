@@ -51,7 +51,7 @@ enum XYZImage_Error {
 	XYZIMAGE_ERROR_OK = 0,
 	/** An unspecified read error occurred */
 	XYZIMAGE_ERROR_IO_READ_GENERIC,
-	/** The image file does not have a XYZ1 magic */
+	/** The file does not have a XYZ1 magic */
 	XYZIMAGE_ERROR_IO_READ_BAD_HEADER,
 	/** After decompression the image has a size != 256 * 3 + width * height */
 	XYZIMAGE_ERROR_IO_READ_BAD_IMAGE,
