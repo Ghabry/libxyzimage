@@ -1,6 +1,6 @@
-EXTRA_DIST = AUTHORS.md README.md TODO
+EXTRA_DIST = AUTHORS.md README.md TODO pkg-config CMakeLists.txt
 
-pkgconfigdir = ${libdir}/pkgconfig
+pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = pkg-config/libxyzimage.pc
 
 cmakeconfigdir = $(libdir)/cmake/xyzimage
