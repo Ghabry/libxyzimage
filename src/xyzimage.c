@@ -148,7 +148,7 @@ XYZImage* xyzimage_alloc(uint16_t width, uint16_t height, enum XYZImage_Format f
 	image->width = width;
 	image->height = height;
 
-	image->data_len = width * height * multiplier;
+	image->data_len = (uint32_t)width * height * multiplier;
 	void* data = calloc(1, image->data_len);
 
 	if (data == NULL) {
@@ -229,7 +229,7 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 	}
 
 	// Allocate intermediate buffers
-	size_t xyz_size = (size_t)(XYZIMAGE_PALETTE_SIZE + image->width * image->height);
+	size_t xyz_size = (size_t)(XYZIMAGE_PALETTE_SIZE + (uint32_t)image->width * image->height);
 
 	Bytef* compressed_xyz = malloc(xyz_size);
 
@@ -369,7 +369,7 @@ size_t xyzimage_get_filesize(const XYZImage* image) {
 		return 0;
 	}
 
-	return image->width * image->height + XYZPRIV_HEADER_SIZE + XYZIMAGE_PALETTE_SIZE;
+	return (uint32_t)image->width * image->height + XYZPRIV_HEADER_SIZE + XYZIMAGE_PALETTE_SIZE;
 }
 
 size_t xyzimage_get_compressed_filesize(const XYZImage* image) {
@@ -426,7 +426,7 @@ int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_
 	}
 
 	// Allocate intermediate buffer
-	size_t xyz_size = (size_t)(XYZIMAGE_PALETTE_SIZE + image->width * image->height);
+	size_t xyz_size = (size_t)(XYZIMAGE_PALETTE_SIZE + (uint32_t)image->width * image->height);
 
 	Bytef* decompressed_xyz = malloc(xyz_size);
 
