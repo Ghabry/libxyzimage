@@ -53,8 +53,10 @@ enum XYZImage_Error {
 	XYZIMAGE_ERROR_IO_READ_GENERIC,
 	/** The file does not have a XYZ1 magic */
 	XYZIMAGE_ERROR_IO_READ_BAD_HEADER,
-	/** After decompression the image has a size != 256 * 3 + width * height */
-	XYZIMAGE_ERROR_IO_READ_BAD_IMAGE,
+	/** The compressed image exceeds the size of 256 * 3 + width * height by a factor of 2 or more */
+	XYZIMAGE_ERROR_IO_READ_IMAGE_TOO_BIG,
+	/** The image is truncated (size < 256 * 3 + width * height after decompression) */
+	XYZIMAGE_ERROR_IO_READ_IMAGE_TOO_SMALL,
 	/** Internal error code to signal that the whole XYZ image was read */
 	XYZIMAGE_ERROR_IO_READ_END_OF_FILE,
 	/** Saving the picture failed due to a write error */

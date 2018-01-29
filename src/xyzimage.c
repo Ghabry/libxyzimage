@@ -296,7 +296,7 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 
 		if (e == XYZIMAGE_ERROR_OK) {
 			// Not EOF and compressed image is larger than twice the uncompressed
-			xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_READ_BAD_IMAGE);
+			xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_READ_IMAGE_TOO_BIG);
 			return NULL;
 		}
 
@@ -307,7 +307,7 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 	image->data_len_compressed = res;
 
 	// Decompress the XYZ image
-	uLongf xyz_size_out = (int)xyz_size;
+	uLongf xyz_size_out = (uLongf)xyz_size;
 	int zlib_error = uncompress(
 			decompressed_xyz, &xyz_size_out, compressed_xyz, (uLong)res);
 
@@ -323,7 +323,7 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 	if (xyz_size_out != xyz_size) {
 		xyzimage_free(image);
 		free(decompressed_xyz);
-		xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_READ_BAD_IMAGE);
+		xyzpriv_set_error(error, XYZIMAGE_ERROR_IO_READ_IMAGE_TOO_SMALL);
 		return NULL;
 	}
 
@@ -337,7 +337,7 @@ XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage
 
 	size_t img_buffer_len;
 	void* img_buffer = xyzimage_get_buffer(image, &img_buffer_len);
-	if (img_buffer == NULL || (error && *error != 0)) {
+	if (img_buffer == NULL) {
 		xyzimage_free(image);
 		free(decompressed_xyz);
 		return NULL;
@@ -590,8 +590,10 @@ const char* xyzimage_get_error_message(xyzimage_error_t error) {
 			return "A read error occurred.";
 		case XYZIMAGE_ERROR_IO_READ_BAD_HEADER:
 			return "The file does not have a XYZ1 magic.";
-		case XYZIMAGE_ERROR_IO_READ_BAD_IMAGE:
-			return "After decompression the image has a size != 256 * 3 + width * height.";
+		case XYZIMAGE_ERROR_IO_READ_IMAGE_TOO_BIG:
+			return "The compressed image exceeds the size of 256 * 3 + width * height by a factor of 2 or more.";
+		case XYZIMAGE_ERROR_IO_READ_IMAGE_TOO_SMALL:
+			return "The image is truncated (size < 256 * 3 + width * height after decompression).";
 		case XYZIMAGE_ERROR_IO_READ_END_OF_FILE:
 			return "Internal error code to signal that the whole XYZ image was read.";
 		case XYZIMAGE_ERROR_IO_WRITE:
