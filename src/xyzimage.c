@@ -142,6 +142,8 @@ static XYZImage* xyzpriv_alloc() {
 }
 
 XYZImage* xyzimage_alloc(uint16_t width, uint16_t height, enum XYZImage_Format format, xyzimage_error_t* error) {
+	xyzpriv_set_error(error, XYZIMAGE_ERROR_OK);
+
 	unsigned int multiplier = 0;
 
 	switch (format) {
@@ -194,6 +196,8 @@ int xyzimage_free(XYZImage* image) {
 }
 
 XYZImage* xyzimage_fopen(FILE* file, xyzimage_error_t* error) {
+	xyzpriv_set_error(error, XYZIMAGE_ERROR_OK);
+
 	if (file == NULL) {
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_POINTER_BAD);
 		return NULL;
@@ -203,6 +207,8 @@ XYZImage* xyzimage_fopen(FILE* file, xyzimage_error_t* error) {
 }
 
 XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage_error_t* error) {
+	xyzpriv_set_error(error, XYZIMAGE_ERROR_OK);
+
 	if (read_func == NULL) {
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_POINTER_BAD);
 		return NULL;
@@ -367,6 +373,8 @@ uint16_t xyzimage_get_height(const XYZImage* image) {
 }
 
 XYZImage_Palette* xyzimage_get_palette(XYZImage* image, xyzimage_error_t* error) {
+	xyzpriv_set_error(error, XYZIMAGE_ERROR_OK);
+
 	if (!xyzimage_is_valid(image)) {
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_XYZIMAGE_INVALID);
 		return NULL;
@@ -429,6 +437,8 @@ void xyzimage_set_compress_func(XYZImage* image, xyzimage_compress_func_t compre
 }
 
 int xyzimage_fwrite(XYZImage* image, FILE* file, xyzimage_error_t* error) {
+	xyzpriv_set_error(error, XYZIMAGE_ERROR_OK);
+
 	if (!xyzimage_is_valid(image)) {
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_XYZIMAGE_INVALID);
 		return 0;
@@ -443,6 +453,8 @@ int xyzimage_fwrite(XYZImage* image, FILE* file, xyzimage_error_t* error) {
 }
 
 int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_func, xyzimage_error_t* error) {
+	xyzpriv_set_error(error, XYZIMAGE_ERROR_OK);
+
 	if (!xyzimage_is_valid(image)) {
 		xyzpriv_set_error(error, XYZIMAGE_ERROR_XYZIMAGE_INVALID);
 		return 0;

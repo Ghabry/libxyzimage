@@ -143,7 +143,7 @@ typedef size_t (*xyzimage_write_func_t)(void* userdata, const void* buffer, size
  * @param width Width of the image in pixel
  * @param height Height of the image in pixel
  * @param format Pixel format of the image buffer
- * @param error When non-null receives the error code when an error occurred
+ * @param error When non-null receives the error code on error or XYZIMAGE_ERROR_OK on success
  * @return An instance of XYZImage when successful, on error NULL is returned and an error code set.
  */
 XYZImage* xyzimage_alloc(uint16_t width, uint16_t height, enum XYZImage_Format format, xyzimage_error_t* error);
@@ -161,7 +161,7 @@ int xyzimage_free(XYZImage* image);
  * The pixel format of images loaded through this function is XYZIMAGE_FORMAT_DEFAULT.
  *
  * @param file Handle to read from
- * @param error When non-null receives the error code when an error occurred
+ * @param error When non-null receives the error code on error or XYZIMAGE_ERROR_OK on success
  * @return An instance of XYZImage when successful, on error NULL is returned and an error code set.
  */
 XYZImage* xyzimage_fopen(FILE* file, xyzimage_error_t* error);
@@ -172,7 +172,7 @@ XYZImage* xyzimage_fopen(FILE* file, xyzimage_error_t* error);
  *
  * @param userdata Custom data forwarded to read_func
  * @param read_func Custom read function used for parsing
- * @param error When non-null receives the error code when an error occurred
+ * @param error When non-null receives the error code on error or XYZIMAGE_ERROR_OK on success
  * @return An instance of XYZImage when successful, on error NULL is returned and an error code set.
  */
 XYZImage* xyzimage_open(void* userdata, xyzimage_read_func_t read_func, xyzimage_error_t* error);
@@ -198,7 +198,7 @@ uint16_t xyzimage_get_height(const XYZImage* image);
  * Fails when the image format of the buffer is not using an indexed palette.
  *
  * @param image Instance of XYZImage
- * @param error When non-null receives the error code when an error occurred
+ * @param error When non-null receives the error code on error or XYZIMAGE_ERROR_OK on success
  * @return Pointer to the palette or NULL on error
  */
 XYZImage_Palette* xyzimage_get_palette(XYZImage* image, xyzimage_error_t* error);
@@ -254,7 +254,7 @@ void xyzimage_set_compress_func(XYZImage* image, xyzimage_compress_func_t compre
  *
  * @param image Instance of XYZImage
  * @param file Handle to write to
- * @param error When non-null receives the error code when an error occurred
+ * @param error When non-null receives the error code on error or XYZIMAGE_ERROR_OK on success
  * @return 1 on success, on error 0 is returned and an error code set.
  */
 int xyzimage_fwrite(XYZImage* image, FILE* file, xyzimage_error_t* error);
@@ -264,7 +264,7 @@ int xyzimage_fwrite(XYZImage* image, FILE* file, xyzimage_error_t* error);
  *
  * @param userdata Custom data forwarded to write_func
  * @param write_func Custom write function
- * @param error When non-null receives the error code when an error occurred
+ * @param error When non-null receives the error code on error or XYZIMAGE_ERROR_OK on success
  * @return 1 on success, on error 0 is returned and an error code set.
  */
 int xyzimage_write(XYZImage* image, void* userdata, xyzimage_write_func_t write_func, xyzimage_error_t* error);
